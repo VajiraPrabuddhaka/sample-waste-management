@@ -15,7 +15,7 @@ spec:
   autoDeploy: true
 
   workflow:
-    name: google-cloud-buildpacks
+    name: gcp-buildpacks-builder
 
     parameters:
       scope:
@@ -37,7 +37,7 @@ metadata:
     openchoreo.dev/component: "waste-management-api"
 spec:
   workflow:
-    name: google-cloud-buildpacks
+    name: gcp-buildpacks-builder
 
     parameters:
       scope:

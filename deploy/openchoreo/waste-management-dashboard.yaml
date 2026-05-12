@@ -15,7 +15,7 @@ spec:
   autoDeploy: true
 
   workflow:
-    name: docker
+    name: dockerfile-builder
 
     parameters:
       scope:
@@ -40,7 +40,7 @@ metadata:
     openchoreo.dev/component: "waste-management-dashboard"
 spec:
   workflow:
-    name: docker
+    name: dockerfile-builder
 
     parameters:
       scope:
