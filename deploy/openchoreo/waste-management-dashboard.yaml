@@ -22,7 +22,7 @@ spec:
         projectName: "default"
         componentName: "waste-management-dashboard"
       repository:
-        url: "https://github.com/<YOUR_ORG>/waste-management-poc-sample-app"
+        url: "https://github.com/vajiraprabuddhaka/sample-waste-management"
         revision:
           branch: "main"
         appPath: "/frontend/WasteManagementDashboard"
@@ -47,7 +47,7 @@ spec:
         projectName: "default"
         componentName: "waste-management-dashboard"
       repository:
-        url: "https://github.com/<YOUR_ORG>/waste-management-poc-sample-app"
+        url: "https://github.com/vajiraprabuddhaka/sample-waste-management"
         revision:
           branch: "main"
         appPath: "/frontend/WasteManagementDashboard"

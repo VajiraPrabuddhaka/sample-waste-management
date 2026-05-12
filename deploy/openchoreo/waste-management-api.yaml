@@ -22,7 +22,7 @@ spec:
         projectName: "default"
         componentName: "waste-management-api"
       repository:
-        url: "https://github.com/<YOUR_ORG>/waste-management-poc-sample-app"
+        url: "https://github.com/vajiraprabuddhaka/sample-waste-management"
         revision:
           branch: "main"
         appPath: "/backend/WasteManagementApi"
@@ -44,7 +44,7 @@ spec:
         projectName: "default"
         componentName: "waste-management-api"
       repository:
-        url: "https://github.com/<YOUR_ORG>/waste-management-poc-sample-app"
+        url: "https://github.com/vajiraprabuddhaka/sample-waste-management"
         revision:
           branch: "main"
         appPath: "/backend/WasteManagementApi"
