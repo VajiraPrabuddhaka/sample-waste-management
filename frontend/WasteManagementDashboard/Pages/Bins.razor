@@ -1,0 +1,205 @@
+@page "/bins"
+@using WasteManagementDashboard.Models
+@using WasteManagementDashboard.Services
+@inject BinService BinSvc
+@inject NavigationManager Nav
+
+<PageTitle>Bins — WasteManagement WMS</PageTitle>
+
+<h1 class="page-title">Waste Bins</h1>
+
+<div class="card">
+    <div class="card-header">
+        <span class="card-title">Add New Bin</span>
+    </div>
+    <div class="card-body">
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Name</label>
+                <input type="text" class="form-control" @bind="_newName" placeholder="e.g. BIN-013" />
+            </div>
+            <div class="form-group">
+                <label class="form-label">Location</label>
+                <input type="text" class="form-control" @bind="_newLocation" placeholder="e.g. Oak Ave & 3rd St" />
+            </div>
+            <div class="form-group">
+                <label class="form-label">Type</label>
+                <select class="form-control" @bind="_newType">
+                    <option>General</option>
+                    <option>Recycling</option>
+                    <option>Organic</option>
+                    <option>Glass</option>
+                    <option>Paper</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Capacity (L)</label>
+                <input type="number" class="form-control" @bind="_newCapacity" min="50" max="5000" />
+            </div>
+            <div class="form-group">
+                <label class="form-label">Latitude</label>
+                <input type="number" class="form-control" @bind="_newLatitude" step="0.0001" />
+            </div>
+            <div class="form-group">
+                <label class="form-label">Longitude</label>
+                <input type="number" class="form-control" @bind="_newLongitude" step="0.0001" />
+            </div>
+            <div class="form-group" style="justify-content:flex-end">
+                <button class="btn btn-primary"
+                        @onclick="CreateBinAsync"
+                        disabled="@(string.IsNullOrWhiteSpace(_newName) || string.IsNullOrWhiteSpace(_newLocation))">
+                    Add Bin
+                </button>
+            </div>
+        </div>
+        @if (!string.IsNullOrEmpty(_createMessage))
+        {
+            <p style="color: @(_createError ? "var(--red)" : "var(--green-mid)"); font-size:13px;">@_createMessage</p>
+        }
+    </div>
+</div>
+
+<div class="form-row">
+    <div class="form-group">
+        <label class="form-label">Filter by Type</label>
+        <select class="form-control" @bind="_filterType" @bind:after="LoadBinsAsync">
+            <option value="">All Types</option>
+            <option>General</option>
+            <option>Recycling</option>
+            <option>Organic</option>
+            <option>Glass</option>
+            <option>Paper</option>
+        </select>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <span class="card-title">Bins (@(_bins?.Count ?? 0))</span>
+    </div>
+    @if (_error is not null)
+    {
+        <div class="loading" style="color:var(--red)">Error: @_error</div>
+    }
+    else if (_bins is null)
+    {
+        <div class="loading">Loading bins...</div>
+    }
+    else if (_bins.Count == 0)
+    {
+        <div class="empty-state">No bins found.</div>
+    }
+    else
+    {
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Location</th>
+                    <th>Type</th>
+                    <th>Status</th>
+                    <th>Fill Level</th>
+                    <th>Last Collected</th>
+                    <th>Last Reading</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var bin in _bins)
+                {
+                    <tr @onclick="() => NavigateToBin(bin.Id)">
+                        <td><strong>@bin.Name</strong></td>
+                        <td>@bin.Location</td>
+                        <td><span class="badge badge-gray">@bin.Type</span></td>
+                        <td>@StatusBadge(bin.Status)</td>
+                        <td>
+                            <div class="fill-bar">
+                                <div class="fill-bar-track">
+                                    <div class="fill-bar-fill @FillClass(bin.CurrentFillLevel)" style="width:@bin.CurrentFillLevel%"></div>
+                                </div>
+                                <span class="fill-label @FillTextClass(bin.CurrentFillLevel)">@bin.CurrentFillLevel.ToString("F1")%</span>
+                            </div>
+                        </td>
+                        <td>@bin.LastCollected.ToString("MMM d, HH:mm")</td>
+                        <td>@bin.LastSensorReading.ToString("HH:mm:ss")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>
+
+@code {
+    private IList<BinSummary>? _bins;
+    private string _filterType = "";
+    private string? _error;
+
+    // Create form fields
+    private string _newName = "";
+    private string _newLocation = "";
+    private string _newType = "General";
+    private double _newCapacity = 1100;
+    private double _newLatitude = 0;
+    private double _newLongitude = 0;
+    private string? _createMessage;
+    private bool _createError;
+
+    protected override async Task OnInitializedAsync() => await LoadBinsAsync();
+
+    private async Task LoadBinsAsync()
+    {
+        _bins = null;
+        _error = null;
+        try
+        {
+            _bins = await BinSvc.GetBinsAsync(type: string.IsNullOrEmpty(_filterType) ? null : _filterType);
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+    }
+
+    private async Task CreateBinAsync()
+    {
+        _createMessage = null;
+        var req = new CreateBinRequest(_newName.Trim(), _newLocation.Trim(), _newLatitude, _newLongitude, _newType, _newCapacity);
+        try
+        {
+            var response = await BinSvc.CreateBinAsync(req);
+            if (response.IsSuccessStatusCode)
+            {
+                _createError = false;
+                _createMessage = $"Bin '{_newName}' created successfully!";
+                _newName = "";
+                _newLocation = "";
+                _newLatitude = 0;
+                _newLongitude = 0;
+                _newCapacity = 1100;
+                _newType = "General";
+                await LoadBinsAsync();
+            }
+            else
+            {
+                _createError = true;
+                _createMessage = $"Failed to create bin (HTTP {(int)response.StatusCode}).";
+            }
+        }
+        catch (Exception ex)
+        {
+            _createError = true;
+            _createMessage = $"Error: {ex.Message}";
+        }
+    }
+
+    private void NavigateToBin(int id) => Nav.NavigateTo($"/bins/{id}");
+    private string FillClass(double level) => level >= 85 ? "fill-red" : level >= 70 ? "fill-yellow" : "fill-green";
+    private string FillTextClass(double level) => level >= 85 ? "fill-label" : "";
+
+    private RenderFragment StatusBadge(string status) => status switch
+    {
+        "Active" => @<span class="badge badge-green">Active</span>,
+        "Inactive" => @<span class="badge badge-gray">Inactive</span>,
+        "Maintenance" => @<span class="badge badge-yellow">Maintenance</span>,
+        _ => @<span class="badge badge-gray">@status</span>
+    };
+}

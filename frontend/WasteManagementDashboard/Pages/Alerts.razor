@@ -1,0 +1,145 @@
+@page "/alerts"
+@using WasteManagementDashboard.Models
+@using WasteManagementDashboard.Services
+@inject AlertService AlertSvc
+@implements IDisposable
+
+<PageTitle>Alerts — WasteManagement WMS</PageTitle>
+
+<h1 class="page-title">Alerts</h1>
+
+<div class="form-row" style="justify-content:space-between">
+    <div style="display:flex;gap:10px;align-items:flex-end">
+        <div class="form-group">
+            <label class="form-label">Filter</label>
+            <select class="form-control" @bind="_filter" @bind:after="LoadAlertsAsync">
+                <option value="all">All</option>
+                <option value="unacknowledged">Unacknowledged</option>
+                <option value="acknowledged">Acknowledged</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Severity</label>
+            <select class="form-control" @bind="_severityFilter" @bind:after="LoadAlertsAsync">
+                <option value="">All Severities</option>
+                <option>Critical</option>
+                <option>Warning</option>
+                <option>Info</option>
+            </select>
+        </div>
+    </div>
+    <div style="align-self:flex-end">
+        <button class="btn btn-warning" @onclick="AcknowledgeAllAsync">Acknowledge All</button>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <span class="card-title">Alerts (@(_alerts?.Count ?? 0)) · Auto-refreshes every 10s</span>
+    </div>
+    @if (_error is not null)
+    {
+        <div class="loading" style="color:var(--red)">Error: @_error</div>
+    }
+    else if (_alerts is null)
+    {
+        <div class="loading">Loading alerts...</div>
+    }
+    else if (_alerts.Count == 0)
+    {
+        <div class="empty-state">No alerts found. All clear!</div>
+    }
+    else
+    {
+        @foreach (var a in _alerts)
+        {
+            <div class="alert-item @(a.IsAcknowledged ? "acknowledged" : "")">
+                <div class="alert-severity">
+                    @SeverityBadge(a.Severity)
+                </div>
+                <div class="alert-message">
+                    <div><strong>@a.Type</strong> — @a.Message</div>
+                    <div class="alert-meta">
+                        @if (a.BinName is not null) { <span>Bin: @a.BinName &nbsp;</span> }
+                        @if (a.TruckName is not null) { <span>Truck: @a.TruckName &nbsp;</span> }
+                        <span>Created: @a.CreatedAt.ToString("MMM d, HH:mm")</span>
+                        @if (a.IsAcknowledged) { <span> · Acked by @a.AcknowledgedBy</span> }
+                    </div>
+                </div>
+                <div class="alert-actions">
+                    @if (!a.IsAcknowledged)
+                    {
+                        <button class="btn btn-secondary btn-sm" @onclick="() => AcknowledgeAsync(a.Id)">Acknowledge</button>
+                    }
+                    else
+                    {
+                        <span class="badge badge-green">Acked</span>
+                    }
+                </div>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    private IList<AlertSummary>? _alerts;
+    private string _filter = "all";
+    private string _severityFilter = "";
+    private string? _error;
+    private Timer? _timer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAlertsAsync();
+        _timer = new Timer(async _ =>
+        {
+            try
+            {
+                await LoadAlertsAsync();
+                await InvokeAsync(StateHasChanged);
+            }
+            catch { }
+        }, null, TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10));
+    }
+
+    private async Task LoadAlertsAsync()
+    {
+        _error = null;
+        bool? acked = _filter switch
+        {
+            "unacknowledged" => false,
+            "acknowledged" => true,
+            _ => null
+        };
+        try
+        {
+            _alerts = await AlertSvc.GetAlertsAsync(acked, string.IsNullOrEmpty(_severityFilter) ? null : _severityFilter);
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+    }
+
+    private async Task AcknowledgeAsync(int id)
+    {
+        await AlertSvc.AcknowledgeAlertAsync(id, "operator");
+        await LoadAlertsAsync();
+    }
+
+    private async Task AcknowledgeAllAsync()
+    {
+        await AlertSvc.AcknowledgeAllAlertsAsync("operator");
+        await LoadAlertsAsync();
+    }
+
+    private RenderFragment SeverityBadge(string severity) => severity switch
+    {
+        "Critical" => @<span class="badge badge-red">Critical</span>,
+        "Warning" => @<span class="badge badge-yellow">Warning</span>,
+        "Info" => @<span class="badge badge-blue">Info</span>,
+        _ => @<span class="badge badge-gray">@severity</span>
+    };
+
+    public void Dispose() => _timer?.Dispose();
+}

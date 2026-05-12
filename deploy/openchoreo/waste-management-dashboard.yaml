@@ -1,0 +1,56 @@
+# OpenChoreo Component — Frontend Dashboard (Web Application)
+# Built from source using Docker workflow (Blazor WASM + nginx)
+apiVersion: openchoreo.dev/v1alpha1
+kind: Component
+metadata:
+  name: waste-management-dashboard
+spec:
+  owner:
+    projectName: default
+
+  componentType:
+    kind: ComponentType
+    name: deployment/web-application
+
+  autoDeploy: true
+
+  workflow:
+    name: docker
+
+    parameters:
+      scope:
+        projectName: "default"
+        componentName: "waste-management-dashboard"
+      repository:
+        url: "https://github.com/<YOUR_ORG>/waste-management-poc-sample-app"
+        revision:
+          branch: "main"
+        appPath: "/frontend/WasteManagementDashboard"
+      docker:
+        context: "/frontend/WasteManagementDashboard"
+        filePath: "/frontend/WasteManagementDashboard/Dockerfile"
+
+---
+apiVersion: openchoreo.dev/v1alpha1
+kind: WorkflowRun
+metadata:
+  name: waste-management-dashboard-build-01
+  labels:
+    openchoreo.dev/project: "default"
+    openchoreo.dev/component: "waste-management-dashboard"
+spec:
+  workflow:
+    name: docker
+
+    parameters:
+      scope:
+        projectName: "default"
+        componentName: "waste-management-dashboard"
+      repository:
+        url: "https://github.com/<YOUR_ORG>/waste-management-poc-sample-app"
+        revision:
+          branch: "main"
+        appPath: "/frontend/WasteManagementDashboard"
+      docker:
+        context: "/frontend/WasteManagementDashboard"
+        filePath: "/frontend/WasteManagementDashboard/Dockerfile"

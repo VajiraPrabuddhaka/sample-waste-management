@@ -1,0 +1,203 @@
+@page "/collections"
+@using WasteManagementDashboard.Models
+@using WasteManagementDashboard.Services
+@inject CollectionService CollectionSvc
+@inject BinService BinSvc
+@inject TruckService TruckSvc
+
+<PageTitle>Collections — WasteManagement WMS</PageTitle>
+
+<h1 class="page-title">Collections</h1>
+
+<div class="card">
+    <div class="card-header">
+        <span class="card-title">Schedule New Collection</span>
+    </div>
+    <div class="card-body">
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Bin</label>
+                <select class="form-control" @bind="_newBinId">
+                    <option value="0">Select bin...</option>
+                    @foreach (var b in _bins ?? [])
+                    {
+                        <option value="@b.Id">@b.Name — @b.Location (@b.CurrentFillLevel.ToString("F1")%)</option>
+                    }
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Truck</label>
+                <select class="form-control" @bind="_newTruckId">
+                    <option value="0">Select truck...</option>
+                    @foreach (var t in _trucks ?? [])
+                    {
+                        <option value="@t.Id">@t.Name (@t.Status)</option>
+                    }
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Scheduled At</label>
+                <input type="datetime-local" class="form-control" @bind="_newScheduledAt" />
+            </div>
+            <div class="form-group">
+                <label class="form-label">Notes</label>
+                <input type="text" class="form-control" @bind="_newNotes" placeholder="Optional notes" />
+            </div>
+            <div class="form-group" style="justify-content:flex-end">
+                <button class="btn btn-primary" @onclick="ScheduleAsync" disabled="@(_newBinId == 0 || _newTruckId == 0)">
+                    Schedule
+                </button>
+            </div>
+        </div>
+        @if (!string.IsNullOrEmpty(_message))
+        {
+            <p style="color: var(--green-mid); font-size: 13px;">@_message</p>
+        }
+    </div>
+</div>
+
+<div class="form-row">
+    <div class="form-group">
+        <label class="form-label">Filter by Status</label>
+        <select class="form-control" @bind="_filterStatus" @bind:after="LoadCollectionsAsync">
+            <option value="">All</option>
+            <option>Scheduled</option>
+            <option>InProgress</option>
+            <option>Completed</option>
+            <option>Cancelled</option>
+        </select>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <span class="card-title">Collections (@(_collections?.Count ?? 0))</span>
+    </div>
+    @if (_collections is null)
+    {
+        <div class="loading">Loading collections...</div>
+    }
+    else if (_collections.Count == 0)
+    {
+        <div class="empty-state">No collections found.</div>
+    }
+    else
+    {
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Bin</th>
+                    <th>Truck</th>
+                    <th>Status</th>
+                    <th>Scheduled</th>
+                    <th>Completed</th>
+                    <th>Fill Lvl</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var c in _collections)
+                {
+                    <tr class="no-hover">
+                        <td>#@c.Id</td>
+                        <td>@c.BinName</td>
+                        <td>@c.TruckName</td>
+                        <td>@CollectionStatusBadge(c.Status)</td>
+                        <td>@c.ScheduledAt.ToString("MMM d, HH:mm")</td>
+                        <td>@(c.CompletedAt?.ToString("MMM d, HH:mm") ?? "—")</td>
+                        <td>@(c.FillLevelAtCollection.HasValue ? $"{c.FillLevelAtCollection:F1}%" : "—")</td>
+                        <td>
+                            @if (c.Status == "Scheduled")
+                            {
+                                <button class="btn btn-primary btn-sm" @onclick="() => StartAsync(c.Id)">Start</button>
+                                <button class="btn btn-secondary btn-sm" @onclick="() => CancelAsync(c.Id)">Cancel</button>
+                            }
+                            @if (c.Status == "InProgress")
+                            {
+                                <button class="btn btn-primary btn-sm" @onclick="() => CompleteAsync(c.Id)">Complete</button>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>
+
+@code {
+    private IList<CollectionSummary>? _collections;
+    private IList<BinSummary>? _bins;
+    private IList<TruckSummary>? _trucks;
+    private string _filterStatus = "";
+    private int _newBinId = 0;
+    private int _newTruckId = 0;
+    private DateTime _newScheduledAt = DateTime.Now.AddHours(1);
+    private string? _newNotes;
+    private string? _message;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Task.WhenAll(LoadCollectionsAsync(), LoadFormDataAsync());
+    }
+
+    private async Task LoadCollectionsAsync()
+    {
+        try
+        {
+            _collections = await CollectionSvc.GetCollectionsAsync(string.IsNullOrEmpty(_filterStatus) ? null : _filterStatus);
+        }
+        catch (Exception ex)
+        {
+            _message = $"Error loading collections: {ex.Message}";
+        }
+    }
+
+    private async Task LoadFormDataAsync()
+    {
+        try
+        {
+            _bins = await BinSvc.GetBinsAsync();
+            _trucks = await TruckSvc.GetTrucksAsync();
+        }
+        catch (Exception ex)
+        {
+            _message = $"Error loading form data: {ex.Message}";
+        }
+    }
+
+    private async Task ScheduleAsync()
+    {
+        var req = new ScheduleCollectionRequest(_newBinId, _newTruckId, _newScheduledAt.ToUniversalTime(), _newNotes);
+        var response = await CollectionSvc.ScheduleCollectionAsync(req);
+        _message = response.IsSuccessStatusCode ? "Collection scheduled successfully!" : "Failed to schedule collection.";
+        if (response.IsSuccessStatusCode) await LoadCollectionsAsync();
+    }
+
+    private async Task StartAsync(int id)
+    {
+        await CollectionSvc.StartCollectionAsync(id);
+        await LoadCollectionsAsync();
+    }
+
+    private async Task CompleteAsync(int id)
+    {
+        await CollectionSvc.CompleteCollectionAsync(id);
+        await LoadCollectionsAsync();
+    }
+
+    private async Task CancelAsync(int id)
+    {
+        await CollectionSvc.CancelCollectionAsync(id);
+        await LoadCollectionsAsync();
+    }
+
+    private RenderFragment CollectionStatusBadge(string status) => status switch
+    {
+        "Scheduled" => @<span class="badge badge-blue">Scheduled</span>,
+        "InProgress" => @<span class="badge badge-yellow">In Progress</span>,
+        "Completed" => @<span class="badge badge-green">Completed</span>,
+        "Cancelled" => @<span class="badge badge-gray">Cancelled</span>,
+        _ => @<span class="badge badge-gray">@status</span>
+    };
+}

@@ -1,0 +1,425 @@
+{
+  "info": {
+    "name": "WasteManagement API",
+    "description": "Smart Waste Management Dashboard — Backend API collection for localhost:5230",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5230",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Dashboard",
+      "item": [
+        {
+          "name": "Get Dashboard Summary",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/dashboard",
+            "description": "Aggregate statistics: bin counts, alert counts, average fill level, collection rates."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Bins",
+      "item": [
+        {
+          "name": "List All Bins",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/bins",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "bins"]
+            },
+            "description": "Returns all bins."
+          }
+        },
+        {
+          "name": "Create Bin",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/bins",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "bins"]
+            },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"BIN-013\",\n  \"location\": \"Oak Ave & 3rd St\",\n  \"latitude\": 40.7150,\n  \"longitude\": -74.0080,\n  \"type\": \"Recycling\",\n  \"capacityLiters\": 1100\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "description": "Create a new waste bin. Type: General | Recycling | Organic | Glass | Paper. New bin starts Active with 0% fill level."
+          }
+        },
+        {
+          "name": "List Bins — Filter by Type",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/bins?type=Recycling",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "bins"],
+              "query": [
+                { "key": "type", "value": "Recycling", "description": "General | Recycling | Organic | Glass | Paper" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Bins — Filter by Status",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/bins?status=Active",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "bins"],
+              "query": [
+                { "key": "status", "value": "Active", "description": "Active | Inactive | Maintenance" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Bin Detail",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/bins/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "bins", "1"]
+            },
+            "description": "Bin detail with last 24h fill-level readings."
+          }
+        },
+        {
+          "name": "Get Bin Readings",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/bins/1/readings?hours=24",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "bins", "1", "readings"],
+              "query": [
+                { "key": "hours", "value": "24", "description": "Number of hours of history (default 24)" }
+              ]
+            },
+            "description": "Fill-level history for a specific bin."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Trucks",
+      "item": [
+        {
+          "name": "List All Trucks",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/trucks",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "trucks"]
+            }
+          }
+        },
+        {
+          "name": "List Trucks — Filter by Status",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/trucks?status=Available",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "trucks"],
+              "query": [
+                { "key": "status", "value": "Available", "description": "Available | OnRoute | Collecting | Returning | OutOfService" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Truck Detail",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/trucks/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "trucks", "1"]
+            },
+            "description": "Truck detail with recent collections."
+          }
+        },
+        {
+          "name": "Update Truck Location",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/api/trucks/1/location",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "trucks", "1", "location"]
+            },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"latitude\": 40.7128,\n  \"longitude\": -74.0060\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Collections",
+      "item": [
+        {
+          "name": "List All Collections",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/collections",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "collections"]
+            }
+          }
+        },
+        {
+          "name": "List Collections — Filter by Status",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/collections?status=Scheduled",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "collections"],
+              "query": [
+                { "key": "status", "value": "Scheduled", "description": "Scheduled | InProgress | Completed | Cancelled" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Collection Detail",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/collections/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "collections", "1"]
+            }
+          }
+        },
+        {
+          "name": "Schedule Collection",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/collections",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "collections"]
+            },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"binId\": 1,\n  \"truckId\": 1,\n  \"scheduledAt\": \"2026-03-12T10:00:00Z\",\n  \"notes\": \"Routine collection\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "Start Collection",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/api/collections/1/start",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "collections", "1", "start"]
+            },
+            "description": "Transition Scheduled → InProgress."
+          }
+        },
+        {
+          "name": "Complete Collection",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/api/collections/1/complete",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "collections", "1", "complete"]
+            },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fillLevelAtCollection\": 87.5\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "description": "Transition InProgress → Completed."
+          }
+        },
+        {
+          "name": "Cancel Collection",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/api/collections/1/cancel",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "collections", "1", "cancel"]
+            },
+            "description": "Cancel a Scheduled or InProgress collection."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Alerts",
+      "item": [
+        {
+          "name": "List All Alerts",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/alerts",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "alerts"]
+            }
+          }
+        },
+        {
+          "name": "List Alerts — Unacknowledged Only",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/alerts?acknowledged=false",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "alerts"],
+              "query": [
+                { "key": "acknowledged", "value": "false", "description": "true | false" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Alerts — Filter by Severity",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/alerts?severity=Critical",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "alerts"],
+              "query": [
+                { "key": "severity", "value": "Critical", "description": "Info | Warning | Critical" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Alert Detail",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/alerts/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "alerts", "1"]
+            }
+          }
+        },
+        {
+          "name": "Acknowledge Alert",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/api/alerts/1/acknowledge",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "alerts", "1", "acknowledge"]
+            },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"acknowledgedBy\": \"operator\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "Acknowledge All Alerts",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/api/alerts/acknowledge-all",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "alerts", "acknowledge-all"]
+            },
+            "description": "Acknowledge all open (unacknowledged) alerts."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Simulation",
+      "item": [
+        {
+          "name": "Get Simulation Status",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/simulation/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "simulation", "status"]
+            },
+            "description": "Returns current chaos and accelerated mode flags."
+          }
+        },
+        {
+          "name": "Toggle Chaos Mode",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/api/simulation/chaos",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "simulation", "chaos"]
+            },
+            "description": "Toggle chaos mode: 50% sensor timeout rate + random API delays."
+          }
+        },
+        {
+          "name": "Toggle Accelerated Mode",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/api/simulation/accelerate",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "simulation", "accelerate"]
+            },
+            "description": "Toggle accelerated mode: sensor cycle 10s → 2s."
+          }
+        },
+        {
+          "name": "Reset Simulation",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/simulation/reset",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "simulation", "reset"]
+            },
+            "description": "Reset all bin fill levels to 20–60%, acknowledge all open alerts, disable chaos and accelerated modes."
+          }
+        }
+      ]
+    }
+  ]
+}

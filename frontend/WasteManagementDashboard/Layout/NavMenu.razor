@@ -1,0 +1,38 @@
+<div class="sidebar-header">
+    <div class="brand">
+        <span class="brand-icon">&#9851;</span>
+        <span class="brand-name">WasteManagement WMS</span>
+    </div>
+    <button class="nav-toggle" @onclick="ToggleNavMenu">&#9776;</button>
+</div>
+
+<div class="@NavMenuCssClass nav-items">
+    <nav>
+        <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+            <span class="nav-icon">&#9635;</span>
+            <span class="nav-label">Dashboard</span>
+        </NavLink>
+        <NavLink class="nav-link" href="bins">
+            <span class="nav-icon">&#128465;</span>
+            <span class="nav-label">Bins</span>
+        </NavLink>
+        <NavLink class="nav-link" href="trucks">
+            <span class="nav-icon">&#128666;</span>
+            <span class="nav-label">Trucks</span>
+        </NavLink>
+        <NavLink class="nav-link" href="collections">
+            <span class="nav-icon">&#128197;</span>
+            <span class="nav-label">Collections</span>
+        </NavLink>
+        <NavLink class="nav-link" href="alerts">
+            <span class="nav-icon">&#128276;</span>
+            <span class="nav-label">Alerts</span>
+        </NavLink>
+    </nav>
+</div>
+
+@code {
+    private bool collapseNavMenu = false;
+    private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+    private void ToggleNavMenu() => collapseNavMenu = !collapseNavMenu;
+}

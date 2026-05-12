@@ -1,0 +1,130 @@
+@page "/"
+@using WasteManagementDashboard.Models
+@using WasteManagementDashboard.Services
+@inject DashboardService DashboardSvc
+@inject SimulationService SimSvc
+@implements IDisposable
+
+<PageTitle>Dashboard — WasteManagement WMS</PageTitle>
+
+<h1 class="page-title">Dashboard</h1>
+<p class="page-subtitle">Live waste management overview · Auto-refreshes every 10s</p>
+
+@if (_summary is null)
+{
+    <div class="loading">Loading dashboard data...</div>
+}
+else
+{
+    <div class="metric-grid">
+        <div class="metric-card">
+            <div class="metric-label">Total Bins</div>
+            <div class="metric-value">@_summary.TotalBins</div>
+            <div class="metric-sub">@_summary.ActiveBins active</div>
+        </div>
+        <div class="metric-card @(_summary.BinsOverThreshold > 0 ? "red-card" : "")">
+            <div class="metric-label">Over Threshold</div>
+            <div class="metric-value">@_summary.BinsOverThreshold</div>
+            <div class="metric-sub">&gt;85% full</div>
+        </div>
+        <div class="metric-card yellow-card">
+            <div class="metric-label">Bins Near Full</div>
+            <div class="metric-value">@_summary.BinsNearFull</div>
+            <div class="metric-sub">&gt;70% full</div>
+        </div>
+        <div class="metric-card blue-card">
+            <div class="metric-label">Avg Fill Level</div>
+            <div class="metric-value">@_summary.AverageFillLevel%</div>
+            <div class="metric-sub">across active bins</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">Total Trucks</div>
+            <div class="metric-value">@_summary.TotalTrucks</div>
+            <div class="metric-sub">@_summary.ActiveTrucks active</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">Today's Collections</div>
+            <div class="metric-value">@_summary.TodayCollections</div>
+            <div class="metric-sub">@_summary.PendingCollections pending</div>
+        </div>
+        <div class="metric-card @(_summary.CriticalAlerts > 0 ? "red-card" : "")">
+            <div class="metric-label">Open Alerts</div>
+            <div class="metric-value">@_summary.OpenAlerts</div>
+            <div class="metric-sub">@_summary.CriticalAlerts critical</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">Completion Rate</div>
+            <div class="metric-value">@_summary.CollectionCompletionRate%</div>
+            <div class="metric-sub">today</div>
+        </div>
+    </div>
+}
+
+@if (_simStatus is not null)
+{
+    <div class="sim-panel">
+        <div class="sim-panel-title">Simulation Controls</div>
+        <div class="sim-controls">
+            <button class="btn btn-chaos @(_simStatus.ChaosMode ? "active" : "")" @onclick="ToggleChaos">
+                @(_simStatus.ChaosMode ? "Chaos ON" : "Chaos OFF")
+            </button>
+            <button class="btn btn-accel @(_simStatus.AcceleratedMode ? "active" : "")" @onclick="ToggleAccelerate">
+                @(_simStatus.AcceleratedMode ? "Accelerated ON" : "Accelerated OFF")
+            </button>
+            <button class="btn btn-secondary" @onclick="ResetSimulation">Reset Simulation</button>
+            <span class="sim-status">
+                @if (_simStatus.ChaosMode) { <span class="badge badge-red">CHAOS MODE</span> }
+                @if (_simStatus.AcceleratedMode) { <span class="badge badge-yellow">ACCELERATED</span> }
+                @if (!_simStatus.ChaosMode && !_simStatus.AcceleratedMode) { <span>Normal mode</span> }
+            </span>
+        </div>
+    </div>
+}
+
+@code {
+    private DashboardSummary? _summary;
+    private SimulationStatus? _simStatus;
+    private Timer? _timer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+        _timer = new Timer(async _ =>
+        {
+            try
+            {
+                await LoadDataAsync();
+                await InvokeAsync(StateHasChanged);
+            }
+            catch { }
+        }, null, TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10));
+    }
+
+    private async Task LoadDataAsync()
+    {
+        try
+        {
+            _summary = await DashboardSvc.GetDashboardAsync();
+            _simStatus = await SimSvc.GetStatusAsync();
+        }
+        catch { }
+    }
+
+    private async Task ToggleChaos()
+    {
+        _simStatus = await SimSvc.ToggleChaosAsync();
+    }
+
+    private async Task ToggleAccelerate()
+    {
+        _simStatus = await SimSvc.ToggleAccelerateAsync();
+    }
+
+    private async Task ResetSimulation()
+    {
+        await SimSvc.ResetAsync();
+        await LoadDataAsync();
+    }
+
+    public void Dispose() => _timer?.Dispose();
+}

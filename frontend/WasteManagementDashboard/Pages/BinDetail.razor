@@ -1,0 +1,114 @@
+@page "/bins/{Id:int}"
+@using WasteManagementDashboard.Models
+@using WasteManagementDashboard.Services
+@inject BinService BinSvc
+@inject NavigationManager Nav
+
+<PageTitle>Bin Detail — WasteManagement WMS</PageTitle>
+
+@if (_error is not null)
+{
+    <div class="loading" style="color:var(--red)">Error: @_error</div>
+}
+else if (_bin is null)
+{
+    <div class="loading">Loading bin details...</div>
+}
+else
+{
+    <div style="margin-bottom:16px">
+        <button class="btn btn-secondary btn-sm" @onclick="@(() => Nav.NavigateTo("/bins"))">&#8592; Back to Bins</button>
+    </div>
+
+    <h1 class="page-title">@_bin.Name</h1>
+    <p class="page-subtitle">@_bin.Location</p>
+
+    <div class="metric-grid">
+        <div class="metric-card @(_bin.CurrentFillLevel >= 85 ? "red-card" : _bin.CurrentFillLevel >= 70 ? "yellow-card" : "")">
+            <div class="metric-label">Current Fill Level</div>
+            <div class="metric-value">@_bin.CurrentFillLevel.ToString("F1")%</div>
+            <div class="fill-bar" style="margin-top:8px">
+                <div class="fill-bar-track">
+                    <div class="fill-bar-fill @FillClass(_bin.CurrentFillLevel)" style="width:@_bin.CurrentFillLevel%"></div>
+                </div>
+            </div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">Type</div>
+            <div class="metric-value" style="font-size:20px">@_bin.Type</div>
+            <div class="metric-sub">@_bin.CapacityLiters L capacity</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">Status</div>
+            <div class="metric-value" style="font-size:20px">@_bin.Status</div>
+            <div class="metric-sub">Installed @_bin.InstalledDate.ToString("MMM yyyy")</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">Last Collected</div>
+            <div class="metric-value" style="font-size:16px">@_bin.LastCollected.ToString("MMM d HH:mm")</div>
+            <div class="metric-sub">Last sensor: @_bin.LastSensorReading.ToString("HH:mm:ss")</div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <span class="card-title">Fill Level History (last 24h)</span>
+        </div>
+        @if (_bin.RecentReadings?.Count == 0)
+        {
+            <div class="empty-state">No readings available.</div>
+        }
+        else
+        {
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Fill Level</th>
+                        <th>Temperature</th>
+                        <th>Battery</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var r in _bin.RecentReadings ?? [])
+                    {
+                        <tr class="no-hover">
+                            <td>@r.RecordedAt.ToString("MMM d, HH:mm")</td>
+                            <td>
+                                <div class="fill-bar">
+                                    <div class="fill-bar-track" style="max-width:120px">
+                                        <div class="fill-bar-fill @FillClass(r.FillLevel)" style="width:@r.FillLevel%"></div>
+                                    </div>
+                                    <span class="fill-label">@r.FillLevel.ToString("F1")%</span>
+                                </div>
+                            </td>
+                            <td>@(r.Temperature.HasValue ? $"{r.Temperature:F1}°C" : "—")</td>
+                            <td>@(r.BatteryLevel.HasValue ? $"{r.BatteryLevel:F1}%" : "—")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+    private WasteManagementDashboard.Models.BinDetail? _bin;
+
+    private string? _error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _bin = await BinSvc.GetBinDetailAsync(Id);
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+    }
+
+    private string FillClass(double level) => level >= 85 ? "fill-red" : level >= 70 ? "fill-yellow" : "fill-green";
+}

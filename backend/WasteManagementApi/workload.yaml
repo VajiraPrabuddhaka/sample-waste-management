@@ -1,0 +1,16 @@
+# OpenChoreo Workload Descriptor — Backend API
+# This file defines how the backend workload exposes endpoints and connects to other services.
+# It sits alongside the source code and gets converted to a Workload CR during the build workflow.
+apiVersion: openchoreo.dev/v1alpha1
+
+metadata:
+  name: waste-management-api
+
+endpoints:
+  - name: rest
+    port: 5230
+    type: HTTP
+    basePath: /
+    visibility:
+      - project
+      - external

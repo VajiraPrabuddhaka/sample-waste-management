@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/backend/">
+    <Project Path="backend/WasteManagementApi/WasteManagementApi.csproj" />
+  </Folder>
+  <Folder Name="/frontend/">
+    <Project Path="frontend/WasteManagementDashboard/WasteManagementDashboard.csproj" />
+  </Folder>
+</Solution>

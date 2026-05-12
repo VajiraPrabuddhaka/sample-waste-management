@@ -1,0 +1,23 @@
+# OpenChoreo Workload Descriptor — Frontend Dashboard
+# This file defines how the frontend workload exposes endpoints and connects to the backend.
+# It sits alongside the source code and gets converted to a Workload CR during the build workflow.
+apiVersion: openchoreo.dev/v1alpha1
+
+metadata:
+  name: waste-management-dashboard
+
+endpoints:
+  - name: http
+    port: 80
+    type: HTTP
+    visibility:
+      - external
+
+# Outgoing connections — wires the frontend to the backend API
+connections:
+  - component: waste-management-api
+    name: rest
+    visibility: project
+    envBindings:
+      address: BACKEND_API_URL
+

@@ -1,0 +1,126 @@
+@page "/trucks"
+@using WasteManagementDashboard.Models
+@using WasteManagementDashboard.Services
+@inject TruckService TruckSvc
+@implements IDisposable
+
+<PageTitle>Trucks — WasteManagement WMS</PageTitle>
+
+<h1 class="page-title">Trucks</h1>
+
+<div class="form-row">
+    <div class="form-group">
+        <label class="form-label">Filter by Status</label>
+        <select class="form-control" @bind="_filterStatus" @bind:after="LoadTrucksAsync">
+            <option value="">All Statuses</option>
+            <option>Available</option>
+            <option>OnRoute</option>
+            <option>Collecting</option>
+            <option>Returning</option>
+            <option>OutOfService</option>
+        </select>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <span class="card-title">Fleet (@(_trucks?.Count ?? 0) trucks) · Auto-refreshes every 15s</span>
+    </div>
+    @if (_error is not null)
+    {
+        <div class="loading" style="color:var(--red)">Error: @_error</div>
+    }
+    else if (_trucks is null)
+    {
+        <div class="loading">Loading trucks...</div>
+    }
+    else if (_trucks.Count == 0)
+    {
+        <div class="empty-state">No trucks found.</div>
+    }
+    else
+    {
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Registration</th>
+                    <th>Status</th>
+                    <th>Fuel Level</th>
+                    <th>Collected Today</th>
+                    <th>Current Route</th>
+                    <th>Last Updated</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var t in _trucks)
+                {
+                    <tr class="no-hover">
+                        <td><strong>@t.Name</strong></td>
+                        <td>@t.RegistrationNumber</td>
+                        <td>@TruckStatusBadge(t.Status)</td>
+                        <td>
+                            <div class="fill-bar">
+                                <div class="fill-bar-track">
+                                    <div class="fill-bar-fill @FuelClass(t.FuelLevelPercent)" style="width:@t.FuelLevelPercent%"></div>
+                                </div>
+                                <span class="fill-label">@t.FuelLevelPercent.ToString("F0")%</span>
+                            </div>
+                        </td>
+                        <td>@t.BinsCollectedToday</td>
+                        <td>@(t.CurrentRoute ?? "—")</td>
+                        <td>@t.LastUpdated.ToString("HH:mm:ss")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>
+
+@code {
+    private IList<TruckSummary>? _trucks;
+    private string _filterStatus = "";
+    private string? _error;
+    private Timer? _timer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadTrucksAsync();
+        _timer = new Timer(async _ =>
+        {
+            try
+            {
+                await LoadTrucksAsync();
+                await InvokeAsync(StateHasChanged);
+            }
+            catch { }
+        }, null, TimeSpan.FromSeconds(15), TimeSpan.FromSeconds(15));
+    }
+
+    private async Task LoadTrucksAsync()
+    {
+        _error = null;
+        try
+        {
+            _trucks = await TruckSvc.GetTrucksAsync(status: string.IsNullOrEmpty(_filterStatus) ? null : _filterStatus);
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+    }
+
+    private string FuelClass(double f) => f < 25 ? "fill-red" : f < 50 ? "fill-yellow" : "fill-green";
+
+    private RenderFragment TruckStatusBadge(string status) => status switch
+    {
+        "Available" => @<span class="badge badge-green">Available</span>,
+        "OnRoute" => @<span class="badge badge-blue">On Route</span>,
+        "Collecting" => @<span class="badge badge-yellow">Collecting</span>,
+        "Returning" => @<span class="badge badge-gray">Returning</span>,
+        "OutOfService" => @<span class="badge badge-red">Out of Service</span>,
+        _ => @<span class="badge badge-gray">@status</span>
+    };
+
+    public void Dispose() => _timer?.Dispose();
+}

@@ -1,0 +1,50 @@
+# OpenChoreo Component — Backend API (Service)
+# Built from source using Google Cloud Buildpacks (.NET)
+apiVersion: openchoreo.dev/v1alpha1
+kind: Component
+metadata:
+  name: waste-management-api
+spec:
+  owner:
+    projectName: default
+
+  componentType:
+    kind: ComponentType
+    name: deployment/service
+
+  autoDeploy: true
+
+  workflow:
+    name: google-cloud-buildpacks
+
+    parameters:
+      scope:
+        projectName: "default"
+        componentName: "waste-management-api"
+      repository:
+        url: "https://github.com/<YOUR_ORG>/waste-management-poc-sample-app"
+        revision:
+          branch: "main"
+        appPath: "/backend/WasteManagementApi"
+
+---
+apiVersion: openchoreo.dev/v1alpha1
+kind: WorkflowRun
+metadata:
+  name: waste-management-api-build-01
+  labels:
+    openchoreo.dev/project: "default"
+    openchoreo.dev/component: "waste-management-api"
+spec:
+  workflow:
+    name: google-cloud-buildpacks
+
+    parameters:
+      scope:
+        projectName: "default"
+        componentName: "waste-management-api"
+      repository:
+        url: "https://github.com/<YOUR_ORG>/waste-management-poc-sample-app"
+        revision:
+          branch: "main"
+        appPath: "/backend/WasteManagementApi"
