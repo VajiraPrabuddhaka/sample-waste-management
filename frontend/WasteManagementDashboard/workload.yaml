@@ -13,11 +13,12 @@ endpoints:
     visibility:
       - external
 
-# Outgoing connections — wires the frontend to the backend API
-connections:
-  - component: waste-management-api
-    name: rest
-    visibility: project
-    envBindings:
-      address: BACKEND_API_URL
+# Outgoing dependencies — wires the frontend to the backend API
+dependencies:
+  endpoints:
+    - component: waste-management-api
+      name: rest
+      visibility: project
+      envBindings:
+        address: BACKEND_API_URL
 
