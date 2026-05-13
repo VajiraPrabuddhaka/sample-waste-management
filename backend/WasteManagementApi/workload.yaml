@@ -10,7 +10,6 @@ endpoints:
   - name: rest
     port: 5230
     type: HTTP
-    basePath: /
     visibility:
       - project
       - external
